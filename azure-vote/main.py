@@ -8,6 +8,7 @@ import logging
 from datetime import datetime
 
 # App Insights
+from opencensus.ext.azure.log_exporter import AzureEventHandler
 from opencensus.ext.azure.log_exporter import AzureLogHandler
 from opencensus.ext.azure import metrics_exporter
 from opencensus.stats import aggregation as aggregation_module
@@ -23,9 +24,15 @@ from opencensus.ext.flask.flask_middleware import FlaskMiddleware
 # Logging
 logger = logging.getLogger(__name__)
 
+logger.addHandler(AzureEventHandler(
+    connection_string='InstrumentationKey=ee6147a6-6162-463a-a119-bfeaff3147f6')
+)
+
 logger.addHandler(AzureLogHandler(
     connection_string='InstrumentationKey=ee6147a6-6162-463a-a119-bfeaff3147f6')
 )
+
+logger.setLevel(logging.INFO)
 
 # Metrics
 exporter = metrics_exporter.new_metrics_exporter(
@@ -84,9 +91,9 @@ def index():
 
         # Get current values
         vote1 = r.get(button1).decode('utf-8')
-        tracer.span(name="Cat Clicked!")
+        tracer.span(name="Cat")
         vote2 = r.get(button2).decode('utf-8')
-        tracer.span(name="Dog Clicked!")
+        tracer.span(name="Dog")
 
         # Return index with values
         return render_template("index.html", value1=int(vote1), value2=int(vote2), button1=button1, button2=button2, title=title)
@@ -100,11 +107,11 @@ def index():
             r.set(button2,0)
             vote1 = r.get(button1).decode('utf-8')
             properties = {'custom_dimensions': {'Cats Vote': vote1}}
-            logger.warning('action', extra=properties)
+            logger.info('Cats', extra=properties)
 
             vote2 = r.get(button2).decode('utf-8')
             properties = {'custom_dimensions': {'Dogs Vote': vote2}}
-            logger.warning('action', extra=properties)
+            logger.info('Dogs', extra=properties)
 
             return render_template("index.html", value1=int(vote1), value2=int(vote2), button1=button1, button2=button2, title=title)
 
